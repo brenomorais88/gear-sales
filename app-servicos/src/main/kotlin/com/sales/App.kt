@@ -1,7 +1,9 @@
-package com.example
+package com.sales
 
-import com.example.config.DatabaseFactory
-import com.example.routes.categoriaRoutes
+import com.sales.config.DatabaseFactory
+import com.sales.features.categorias.categoriaRoutes
+import com.sales.features.auth.authRoutes
+import com.sales.features.auth.installJwtSecurity
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -22,6 +24,7 @@ fun Application.module() {
 
     install(CallLogging)
     install(ContentNegotiation) { json() }
+    installJwtSecurity()
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             call.respond(HttpStatusCode.BadRequest, mapOf("error" to (cause.message ?: "unknown")))
@@ -31,6 +34,7 @@ fun Application.module() {
 
     routing {
         get("/") { call.respondText("API ok") }
+        authRoutes()
         categoriaRoutes()
     }
 }

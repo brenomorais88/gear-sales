@@ -1,4 +1,4 @@
-package com.example.repo
+package com.sales.features.categorias
 
 import org.jetbrains.exposed.dao.id.IntIdTable
 

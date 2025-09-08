@@ -1,4 +1,4 @@
-package com.example.domain
+package com.sales.features.categorias
 import kotlinx.serialization.Serializable
 
 @Serializable

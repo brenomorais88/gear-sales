@@ -1,4 +1,4 @@
-package com.example.config
+package com.sales.config
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -21,7 +21,6 @@ object DatabaseFactory {
 
         Flyway.configure()
             .dataSource(ds)
-            .locations("classpath:db/migration")
             .load()
             .migrate()
 
