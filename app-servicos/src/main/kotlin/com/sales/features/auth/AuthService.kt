@@ -3,7 +3,6 @@ package com.sales.features.auth
 import at.favre.lib.crypto.bcrypt.BCrypt
 import com.sales.features.user.UserDao
 import com.sales.features.auth.model.LoginResult
-
 import java.time.LocalDate
 
 class AuthService(

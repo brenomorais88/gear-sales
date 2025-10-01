@@ -1,30 +1,23 @@
 package com.sales.features.loja
 
+import com.sales.features.auth.AuthContext
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
-
-data class AuthContext(
-    val usuarioId: UUID,
-    val systemAdmin: Boolean = false
-)
-
-interface LojaMembershipChecker {
-    fun roleNaLoja(usuarioId: UUID, lojaId: UUID): LojaRole? // null se não vinculado
-    fun podeCriarLoja(userId: UUID): Boolean
-}
 
 class LojaService(
     private val repo: LojaRepository,
-    private val membership: LojaMembershipChecker
 ) {
     fun criar(ctx: AuthContext, req: LojaCreateRequest): LojaResponse {
-        if (! membership.podeCriarLoja(ctx.usuarioId)) error("Sem permissão para criar lojas.")
+        if (!ctx.systemAdmin) { error("Sem permissão para criar loja") }
         return repo.create(req)
     }
 
     fun obter(ctx: AuthContext, id: UUID): LojaResponse {
         val loja = repo.findById(id) ?: error("Loja não encontrada.")
         if (!ctx.systemAdmin) {
-            membership.roleNaLoja(ctx.usuarioId, id) ?: error("Sem acesso a esta loja.")
+            roleNaLoja(ctx.usuarioId, id) ?: error("Sem acesso a esta loja.")
         }
         return loja
     }
@@ -62,14 +55,22 @@ class LojaService(
     fun minhasLojas(ctx: AuthContext): List<LojaResponse> =
         repo.listarLojasDoUsuario(ctx.usuarioId)
 
+    fun roleNaLoja(usuarioId: UUID, lojaId: UUID): LojaRole? = transaction {
+        LojaUsuarios.selectAll()
+            .where { (LojaUsuarios.usuarioId eq usuarioId) and (LojaUsuarios.lojaId eq lojaId) }
+            .limit(1)
+            .firstOrNull()
+            ?.get(LojaUsuarios.role)
+    }
+
     private fun checarAdmin(ctx: AuthContext, lojaId: UUID) {
         if (ctx.systemAdmin) return
-        val role = membership.roleNaLoja(ctx.usuarioId, lojaId) ?: error("Sem acesso a esta loja.")
+        val role = roleNaLoja(ctx.usuarioId, lojaId) ?: error("Sem acesso a esta loja.")
         if (role != LojaRole.ADMIN) error("Ação permitida apenas para ADMIN da loja.")
     }
 
     private fun checarMembro(ctx: AuthContext, lojaId: UUID) {
         if (ctx.systemAdmin) return
-        membership.roleNaLoja(ctx.usuarioId, lojaId) ?: error("Sem acesso a esta loja.")
+        roleNaLoja(ctx.usuarioId, lojaId) ?: error("Sem acesso a esta loja.")
     }
 }

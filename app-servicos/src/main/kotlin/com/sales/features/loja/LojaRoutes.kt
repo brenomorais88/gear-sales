@@ -1,9 +1,8 @@
 package com.sales.features.loja
 
+import com.sales.features.auth.authCtx
 import io.ktor.server.routing.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import org.koin.ktor.ext.getKoin
@@ -71,25 +70,9 @@ fun Route.lojaRoutes() {
             }
         }
 
-        // Atalho: lojas do usuário autenticado
         get("/me/lojas") {
             val ctx = call.authCtx()
             call.respond(service.minhasLojas(ctx))
         }
     }
-}
-
-private fun ApplicationCall.authCtx(): AuthContext {
-    val principal = this.principal<JWTPrincipal>() ?: error("Unauthorized")
-    // Ajuste os claims conforme seu JWT (ex.: "uid" e "sysadmin")
-    val uid = principal.payload.getClaim("uid").asString()
-        ?: principal.payload.subject
-        ?: error("Token sem uid.")
-
-    val userId = try { UUID.fromString(uid) } catch (_: Exception) {
-        error("uid inválido no token.")
-    }
-
-    val isSysAdmin = principal.payload.getClaim("sysadmin").asBoolean() ?: false
-    return AuthContext(usuarioId = userId, systemAdmin = isSysAdmin)
 }
