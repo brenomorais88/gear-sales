@@ -1,35 +1,27 @@
 package com.sales.features.auth
 
+import com.sales.features.auth.model.LoginRequest
+import com.sales.features.auth.model.RegisterRequest
 import io.ktor.server.routing.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.http.*
-import kotlinx.serialization.Serializable
-import org.koin.ktor.ext.inject
+import org.koin.core.context.GlobalContext
 import java.time.LocalDate
 import java.util.UUID
 
 fun Route.authRoutes() {
-    val auth: AuthService by inject()
+    val auth: AuthService = GlobalContext.get().get()   // resolve do Koin
 
     route("/auth") {
         post("/register") {
-            @Serializable
-            data class Req(
-                val nome: String,
-                val sobrenome: String,
-                val documento: String,
-                val dataNascimento: String, // ISO: "1999-12-31"
-                val senha: String
-            )
-            val r = call.receive<Req>()
+            val r = call.receive<RegisterRequest>()
             val res = auth.register(
                 r.nome.trim(),
                 r.sobrenome.trim(),
-                r.documento.filter { it.isDigit() || it.isLetter() || it == '.' || it == '-' || it == '/' }, // simples
+                r.documento,
                 LocalDate.parse(r.dataNascimento),
                 r.senha
             )
@@ -37,10 +29,8 @@ fun Route.authRoutes() {
         }
 
         post("/login") {
-            @Serializable data class Req(val documento: String, val senha: String)
-            val r = call.receive<Req>()
-            val res = auth.login(r.documento, r.senha)
-            call.respond(res)
+            val r = call.receive<LoginRequest>()
+            call.respond(auth.login(r.documento, r.senha))
         }
     }
 
